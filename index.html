@@ -1,31 +1,132 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>我的照片</title>
+<title>台股損益計算機</title>
 
 <style>
 body {
-    margin: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    background: #f5f5f5;
+  font-family: Arial;
+  padding: 20px;
+  max-width: 500px;
+  margin: auto;
 }
 
-img {
-    max-width: 90%;
-    max-height: 90vh;
-    border-radius: 10px;
+input, select {
+  width: 100%;
+  padding: 8px;
+  margin: 5px 0 15px 0;
+  font-size: 16px;
+}
+
+button {
+  width: 100%;
+  padding: 10px;
+  font-size: 16px;
+  background: black;
+  color: white;
+  border: none;
+}
+
+button.clear {
+  background: #666;
+  margin-top: 10px;
+}
+
+.result {
+  background: #f5f5f5;
+  padding: 10px;
+  margin-top: 10px;
 }
 </style>
-
 </head>
+
 <body>
 
-<img src="01.png" alt="我的照片">
+<h2>台股損益計算機</h2>
+
+<!-- 類型 -->
+<label>類型</label>
+<select id="type">
+  <option value="stock">股票</option>
+  <option value="daytrade">當沖</option>
+  <option value="etf">ETF</option>
+</select>
+
+<!-- 價格 -->
+<label>買入價格</label>
+<input type="number" id="buy" step="0.01" inputmode="decimal">
+
+<label>賣出價格</label>
+<input type="number" id="sell" step="0.01" inputmode="decimal">
+
+<!-- 股數 -->
+<label>股數</label>
+<input type="number" id="qty" step="1" min="1" inputmode="numeric">
+
+<!-- 按鈕 -->
+<button onclick="calc()">計算</button>
+<button class="clear" onclick="resetForm()">清除</button>
+
+<div class="result" id="result"></div>
+
+<script>
+function calc() {
+
+  const type = document.getElementById("type").value;
+  const buy = parseFloat(document.getElementById("buy").value);
+  const sell = parseFloat(document.getElementById("sell").value);
+  const qty = Math.floor(parseFloat(document.getElementById("qty").value));
+
+  if (isNaN(buy) || isNaN(sell) || isNaN(qty) || qty <= 0) {
+    alert("請輸入正確數值");
+    return;
+  }
+
+  // 成交金額
+  const buyCost = buy * qty;
+  const sellValue = sell * qty;
+
+  // 手續費（0.1425%，最低1元）
+  let buyFee = Math.max(buyCost * 0.001425, 1);
+  let sellFee = Math.max(sellValue * 0.001425, 1);
+
+  // 證交稅
+  let taxRate = 0.003;
+  if (type === "etf") taxRate = 0.001;
+  if (type === "daytrade") taxRate = 0.0015;
+
+  let tax = sellValue * taxRate;
+
+  // 損益
+  const profit = sellValue - buyCost - buyFee - sellFee - tax;
+
+  // 投報率
+  const cost = buyCost + buyFee;
+  const roi = (profit / cost) * 100;
+
+  document.getElementById("result").innerHTML = `
+    買入成本：${buyCost.toFixed(0)}<br>
+    賣出金額：${sellValue.toFixed(0)}<br>
+    買入手續費：${buyFee.toFixed(0)}<br>
+    賣出手續費：${sellFee.toFixed(0)}<br>
+    證交稅：${tax.toFixed(0)}<br>
+    <hr>
+    <b>損益：${profit.toFixed(0)}</b><br>
+    <b>投報率：${roi.toFixed(2)}%</b>
+  `;
+}
+
+// 清除輸入
+function resetForm() {
+  document.getElementById("type").value = "stock";
+  document.getElementById("buy").value = "";
+  document.getElementById("sell").value = "";
+  document.getElementById("qty").value = "";
+  document.getElementById("result").innerHTML = "";
+}
+</script>
 
 </body>
 </html>
